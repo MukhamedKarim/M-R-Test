@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Миллера-Рабина</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); display: inline-block; }
+        input, button { margin: 10px; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 20px; text-align: left; white-space: pre-line; background: #eef; padding: 15px; border-radius: 5px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Тест Миллера-Рабина</h2>
+        <label>Введите n: <input type="text" id="n" /></label><br>
+        <button onclick="runMillerRabin()">Проверить</button>
+        <div class="result" id="output"></div>
+    </div>
+    
+    <script>
+        // Функция быстрого возведения в степень по модулю
+        function modExp(base, exp, mod) {
+            let result = 1n;
+            base = base % mod; // Сразу приводим base к модулю, чтобы избежать больших чисел
+            let steps = `Вычисляем ${base}^${exp} mod ${mod}\n`;
+            while (exp > 0n) {
+                if (exp % 2n === 1n) {
+                    result = (result * base) % mod; // Если степень нечетная, умножаем на base
+                }
+                steps += `(${base}^2) mod ${mod} = ${(base * base) % mod}\n`;
+                base = (base * base) % mod; // Возводим base в квадрат и берем по модулю
+                exp /= 2n; // Уменьшаем степень в 2 раза
+            }
+            return result;
+        }
+        
+        // Функция разложения n-1 на 2^s * d
+        function decompose(n) {
+            let s = 0n, d = n - 1n;
+            let decompositionSteps = `Разлагаем ${n}-1 на 2^s * d:\n`;
+            while (d % 2n === 0n) {
+                d /= 2n;
+                s += 1n;
+                decompositionSteps += `s = ${s}, d = ${d}\n`;
+            }
+            return { s, d, decompositionSteps };
+        }
+        
+        // юлок теста Миллера-Рабина
+        function runMillerRabin() {
+            let n = BigInt(document.getElementById("n").value.trim()); // Получаем n из ввода
+            let output = `Проверяем число n = ${n}\n`;
+            
+            // исключаем числа которые и так не простые
+            if (n <= 1n) {
+                output += "n должно быть больше 1.\n";
+                document.getElementById("output").innerText = output;
+                return;
+            }
+            if (n % 2n === 0n && n !== 2n) {
+                output += "n - чётное, значит составное (кроме 2).\n";
+                document.getElementById("output").innerText = output;
+                return;
+            }
+            
+            // расскладываем n-1 в виде 2^s * d
+            let { s, d, decompositionSteps } = decompose(n);
+            output += decompositionSteps;
+            
+            let a = 2n; // фиксированное основание a = 2 (так удобнее)
+            let x = modExp(a, d, n); // a^d mod n по первой функии
+            output += `Начальное вычисление: ${a}^${d} mod ${n} = ${x}\n`;
+            
+            // если x == 1 или x == n-1, возможно, n простое
+            if (x === 1n || x === n - 1n) {
+                output += "x = 1 или x = n-1, возможно, n простое.\n";
+                document.getElementById("output").innerText = output;
+                return;
+            }
+            
+            // блок проверки возможности получить n-1 в процессе возведения в квадрат
+            for (let i = 1n; i < s; i++) {
+                x = (x * x) % n;
+                output += `Возводим в квадрат: (${x}^2) mod ${n} = ${x}\n`;
+                if (x === 1n) {
+                    output += "Получили 1 до n-1, значит n составное.\n";
+                    document.getElementById("output").innerText = output;
+                    return;
+                }
+                if (x === n - 1n) {
+                    output += "Получили n-1, возможно, n простое.\n";
+                    document.getElementById("output").innerText = output;
+                    return;
+                }
+            }
+            
+            // Если не получили n-1, то n - составное
+            output += "n - составное число.\n";
+            document.getElementById("output").innerText = output;
+        }
+    </script>
+</body>
+</html>
